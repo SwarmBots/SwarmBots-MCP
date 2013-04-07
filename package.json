@@ -1,0 +1,20 @@
+{
+	"name": "SwarmBots-MCP",
+	"version": "0.0.0",
+	"description": "Local client for communicating with SwarmBots server and dispatching commands to individual SwarmBots",
+	"author": "Evan Simpson <evanmsimpson@gmail.com>",
+	"contributors": ["Evan Simpson"],
+	"scripts": {
+		"start": "node client.js"
+	},
+	"dependencies": {
+		"rem": "~0.6.3-2",
+		"carrier": "~0.1.10",
+	"clarinet": "0.7.1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/SwarmBots/SwarmBots-MCP.git"
+	},
+	"readmeFilename": "README.md"
+}
