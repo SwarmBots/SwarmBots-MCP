@@ -18,7 +18,7 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
     'key': process.env.TW_SWARMBOTS_KEY,
     'secret':  process.env.TW_SWARMBOTS_SECRET
   }).promptAuthentication(function (err, user){
-    /*
+    
     user.stream('statuses/filter').get({'track': 'swarmbots'},function (err, stream) {
       carrier.carry(stream, function (line){
         if (line){
@@ -27,7 +27,7 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
         }
       });
     });
-    */
+    
     var parseTweet = function(json){
       console.log(json.id_str, json.text, json.user);
       autoRespond(json.user.screen_name);
