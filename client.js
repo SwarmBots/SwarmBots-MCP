@@ -30,7 +30,9 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
     
     var parseTweet = function(json){
       console.log(json.id_str, json.text, json.user);
-      autoRespond(json.user.screen_name);
+      user_info= {sid:json.id_str, name:json.user.name, location:{name:json.user.location}, type:'tw',picture:{data:{url:json.user.profile_image_url}} }
+      //autoRespond(json.user.screen_name);
+      checkValidCommand(json.text, user_info, json.user.screen_name);
     }
 
     var autoRespond = function(screen_name){
@@ -42,14 +44,49 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
     }
 
     var checkValidCommand = function(text, user_info, screen_name){
-      if (text){
+      text = text.toLowerCase();
+      if (text.indexOf("blue") > -1){
+        console.log(user_info);
+
+        acceptCommand(screen_name);
+      }else if (text.indexOf("green") > -1){
+        acceptCommand(screen_name);
+      }else if (text.indexOf("red") > -1){
+        acceptCommand(screen_name);
+      }else if (text.indexOf("pink") > -1){
+        acceptCommand(screen_name);
+      }else if (text.indexOf("yellow") > -1){
         acceptCommand(screen_name);
       }else{
         declineCommand(screen_name);
       }
     }
 
+    var submitCommand = function(bot, json)
+      mongo.getSwarmBot(db, bot, function (err, sb){
+        if (!sb.queue){
+          sb.queue = [];
+        }
+        mongo.getQueue(db, function (err, queue){
+          if(queue.people.indexOf(json.sid) > -1){
+            mongo.getSwarmBots(db, function (err, bots){
+              res.render('includes/bots', {bots: bots.sort(compareBots)});
+            });
+          }else{
+            sb.queue.push({name: json.name, photo: json.picture.data.url, location: json.location.name, sid:json.sid});
+            queue.people.push(json.sid);
+            mongo.updateSwarmBot(db, sb, function (){
+              mongo.updateQueue(db, queue, function (){
+              });
+            });
+          }
+        });
+      });
+
+
+
     var acceptCommand = function(screen_name){
+
       sendReceipt(screen_name);
     }
 
@@ -70,19 +107,18 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
     }
 
     var testMongo = function(){
-      var fake_user1 = {name: 'cool guy', screen_name: 'xx__coolguy__xx'};
-      var fake_user2 = {name: 'loser', screen_name: 'NotALoser'};
+      var fake_user1 = {sid: 'cool guy', screen_name: 'xx__coolguy__xx'};
+      var fake_user2 = {sid: 'loser', screen_name: 'NotALoser'};
       mongo.updateTest(db, fake_user1, function(err,res){console.log(res);});
       mongo.updateTest(db, fake_user2, function(err,res){console.log(res);});
-      mongo.getTest(db, 'loser', {}, function(err, res){
+      mongo.getTest(db, 'loser', function(err, res){
         console.log(res);
+        console.log(typeof res._id);
         res['newField'] = 'new info!';
         mongo.updateTest(db, res, function(err,res){console.log(res);});
       });
     }
 
-
-    testMongo();
-
+    
   });
 });

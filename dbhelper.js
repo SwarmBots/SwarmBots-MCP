@@ -1,22 +1,34 @@
 
-var get = function (collection, sid, uid, callback){
+var get = function (collection, uid, callback){
   var args = Array.prototype.slice.call(arguments, 1);
   callback = typeof args[args.length - 1] == 'function' ? args.pop() : null;
-  uid = typeof args[args.length -1] != "string" ? args.pop() : null;
-  sid = typeof args[args.length -1] == "string" ? args.pop() : null;
-  if (!uid == null){
+  if (typeof uid != 'string'){
     collection.findOne({_id: uid}, callback);
   }else{
-    collection.findOne({sid: sid}, callback);
+    collection.findOne({sid: uid}, callback);
   }
 }
 
+var getAll = function(collection, callback){
+  collection.find().toArray(callback);
+}
+
 var update = function (collection, doc, callback){
-  if (doc.id != null){
-    collection.update({id: doc.id}, doc, {upsert: true}, callback);
+  if (doc["_id"] != null){
+    collection.update({"_id": doc["_id"]}, doc, {upsert: true}, callback);
   }else{
     collection.update({sid: doc.sid}, doc, {upsert: true}, callback);
   }
+}
+
+exports.updateQueue = function(db, doc, callback){
+  var collection = db.collection('queue');
+  update(collection, doc, callback);
+}
+
+exports.getQueue = function(db, callback){
+  var collection = db.collection('queue');
+  get(collection, "people" ,callback);
 }
 
 exports.updateTest = function (db, doc, callback){
@@ -24,14 +36,14 @@ exports.updateTest = function (db, doc, callback){
   update(collection, doc, callback);
 }
 
-exports.getTest = function (db, sid, uid, callback){
+exports.getTest = function (db, uid, callback){
   var collection = db.collection('test');
-  get(collection, sid, uid, callback);
+  get(collection, uid, callback);
 }
 
-exports.getUser = function (db, sid, uid, callback){
+exports.getUser = function (db, uid, callback){
   var collection = db.collection('users');
-  get(collection, sid, uid, callback);
+  get(collection, uid, callback);
 }
 
 exports.updateUser = function (db, userDoc, callback){
@@ -39,9 +51,9 @@ exports.updateUser = function (db, userDoc, callback){
   update(collection, userDoc, callback);
 }
 
-exports.getSwarmBot = function (db, sid, uid, callback){
+exports.getSwarmBot = function (db, uid, callback){
   var collection = db.collection('bots');
-  get(collection, sid, uid, callback);
+  get(collection, uid, callback);
 }
 
 exports.updateSwarmBot = function(db, swarmDoc, callback){
@@ -49,6 +61,10 @@ exports.updateSwarmBot = function(db, swarmDoc, callback){
   update(collection, swarmDoc, callback);
 }
 
+exports.getSwarmBots = function(db, callback){
+  var collection = db.collection('bots');
+  getAll(collection, callback);
+}
 
 
 
