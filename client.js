@@ -29,7 +29,7 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
     });
     
     var parseTweet = function(json){
-      console.log(json.id_str, json.text, json.user);
+      //console.log(json.id_str, json.text, json.user);
       user_info= {sid:json.id_str, name:json.user.name, location:{name:json.user.location}, type:'tw',picture:{data:{url:json.user.profile_image_url}} }
       //autoRespond(json.user.screen_name);
       checkValidCommand(json.text, user_info, json.user.screen_name);
@@ -46,32 +46,33 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
     var checkValidCommand = function(text, user_info, screen_name){
       text = text.toLowerCase();
       if (text.indexOf("blue") > -1){
-        console.log(user_info);
-
+        submitCommand("blue", user_info)
         acceptCommand(screen_name);
       }else if (text.indexOf("green") > -1){
+        submitCommand("green", user_info)
         acceptCommand(screen_name);
       }else if (text.indexOf("red") > -1){
+        submitCommand("red", user_info)
         acceptCommand(screen_name);
       }else if (text.indexOf("pink") > -1){
+        submitCommand("pink", user_info)
         acceptCommand(screen_name);
       }else if (text.indexOf("yellow") > -1){
+        submitCommand("yellow", user_info)
         acceptCommand(screen_name);
       }else{
         declineCommand(screen_name);
       }
     }
 
-    var submitCommand = function(bot, json)
+    var submitCommand = function(bot, json){
       mongo.getSwarmBot(db, bot, function (err, sb){
         if (!sb.queue){
           sb.queue = [];
         }
         mongo.getQueue(db, function (err, queue){
           if(queue.people.indexOf(json.sid) > -1){
-            mongo.getSwarmBots(db, function (err, bots){
-              res.render('includes/bots', {bots: bots.sort(compareBots)});
-            });
+            declineDuplicate(json.user.screen_name);
           }else{
             sb.queue.push({name: json.name, photo: json.picture.data.url, location: json.location.name, sid:json.sid});
             queue.people.push(json.sid);
@@ -82,6 +83,7 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
           }
         });
       });
+    } 
 
 
 
@@ -100,9 +102,17 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
 
     var declineCommand = function(screen_name){
       user('statuses/update').post({
+        status: "@" + screen_name + " sorry, you queue for one bot at a time."
+      }, function (err, json){
+        console.log("Command Declined, duplicate.");
+      });
+    }
+
+    var declineCommand = function(screen_name){
+      user('statuses/update').post({
         status: "@" + screen_name + " that is an invalid command."
       }, function (err, json){
-        console.log("Command Declined.");
+        console.log("Command Declined, invalid.");
       });
     }
 
