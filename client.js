@@ -3,9 +3,15 @@ var read = require('read');
 var carrier = require('carrier');
 var MongoClient = require('mongodb').MongoClient;
 var mongo = require('./dbhelper');
-var SerialPort = require('serialport').SerialPort
+var serialport = require('serialport')
+var SerialPort = serialport.SerialPort
 var serialPort = new SerialPort("/dev/ttyACM0", {
-  baudrate: 57600
+  baudrate: 57600,
+  parser: serialport.parsers.readline("\n") 
+}, false);
+var serialPort2 = new SerialPort("/dev/ttyACM1", {
+  baudrate: 57600,
+  parser: serialport.parsers.readline("\n") 
 }, false);
 
 
@@ -127,16 +133,17 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
     //     mongo.updateTest(db, res, function(err,res){console.log(res);});
     //   });
     // }
-
+    serialPort2.open();
     serialPort.open(function () {
       serialPort.on('data', function(data) {
-        console.log('data received: ' + data);
-      });  
-      serialPort.write("T\n", function(err, results) {
-        console.log('err ' + err);
-        console.log('results ' + results);
-      });  
-    });
+        if(data.indexOf('PA') !== -1){
+          serialPort.write("T\n", function(err, results) {
+              console.log('err ' + err);
+              console.log('results ' + results);
+          });
+        }
+        console.log(data);
+      });
     /*
     var parseMessage = function(message){
 
@@ -154,6 +161,9 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
 
     }
     */
+    });
+    
+    
 
     
   });
