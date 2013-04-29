@@ -13,7 +13,10 @@ var serialPort2 = new SerialPort("/dev/ttyACM1", {
   baudrate: 57600,
   parser: serialport.parsers.readline("\n") 
 }, false);
-
+var ids_decode = {'1':"blue", '2':"green", '3':"pink", '4':"red", '5':"yellow"};
+var directions_decode = {'1':"N", '2':"NE", '3':"E", '4':"SE", '5':"S", '6':"SW", '7':"W", '8':"NW"};
+var ids_encode = {"blue":'1', "green":'2', "pink":'3', "red":'4', "yellow":'5'};
+var directions_encode = {"N":'1', "NE":'2', "E":'3', "SE":'4', "S":'5', "SW":'6', "W":'7', "NW":'8'};
 
 MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
 
@@ -121,18 +124,6 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
       });
     }
 
-    // var testMongo = function(){
-    //   var fake_user1 = {sid: 'cool guy', screen_name: 'xx__coolguy__xx'};
-    //   var fake_user2 = {sid: 'loser', screen_name: 'NotALoser'};
-    //   mongo.updateTest(db, fake_user1, function(err,res){console.log(res);});
-    //   mongo.updateTest(db, fake_user2, function(err,res){console.log(res);});
-    //   mongo.getTest(db, 'loser', function(err, res){
-    //     console.log(res);
-    //     console.log(typeof res._id);
-    //     res['newField'] = 'new info!';
-    //     mongo.updateTest(db, res, function(err,res){console.log(res);});
-    //   });
-    // }
     serialPort2.open();
     serialPort.open(function () {
       serialPort.on('data', function(data) {
@@ -144,23 +135,33 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
         }
         console.log(data);
       });
-    /*
-    var parseMessage = function(message){
+    
+      var parseMessage = function(message){
+        var data_array = [];
+        data_array[0] = message[0];
+        data_array[1] = ids_decode[message[1]];
+        data_array[2] = message[2];
+        data_array[3] = message[3];        
+        getNextMove(data_array);
+      }
 
-    }
+      var getNextMove = function(data){
+        
+        packageNewMessage(json);
+      }
 
-    var getNextMove = function(json){
+      var packageNewMessage = function(json){
+        var message = "";
+        sendNextMove(message);
+      }
 
-    }
-
-    var packageNewMessage = function(json){
-
-    }
-
-    var sendNextMove = function(message){
-
-    }
-    */
+      var sendNextMove = function(message){
+        serialPort.write(message, function(err, results){
+          console.log('err ' + err);
+          console.log('results ' + results);
+        });
+      }
+    
     });
     
     
