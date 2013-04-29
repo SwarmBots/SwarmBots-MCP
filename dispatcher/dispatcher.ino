@@ -58,8 +58,6 @@ void setup(void)
   // Print preamble
   //
 
-  String readString = "";
-
   Serial.begin(57600);
   printf_begin();
   printf("\n\rRF24/examples/GettingStarted/\n\r");
@@ -119,6 +117,7 @@ void loop(void)
   //
   // Ping out role.  Repeatedly send the current time
   //
+  String readString = "";
   if (Serial.available()){
     while (Serial.available()) {
       delay(3);  //delay to allow buffer to fill 
@@ -128,11 +127,14 @@ void loop(void)
       } 
     }
     String message = readString;
+    String readString = "";
+    char smessage[4];
+    message.toCharArray(smessage, 4);
     // First, stop listening so we can talk.
     radio.stopListening();
 
     // Take the time, and send it.  This will block until complete
-    printf("Now sending %lu...",message);
+    printf("Now sending %lu...",smessage);
     bool ok = radio.write( &message, 16 );
     
     if (ok)
@@ -160,9 +162,10 @@ void loop(void)
       // Grab the response, compare, and send to debugging spew
       String received_message;
       radio.read( &received_message, 16 );
-
+      char rmessage[4];
+      received_message.toCharArray(rmessage, 4);
       // Spew it
-      printf("Got response %lu." received_message);
+      printf("Got response %lu.", rmessage);
     }
   }
 }
