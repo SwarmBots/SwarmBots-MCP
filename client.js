@@ -5,14 +5,14 @@ var MongoClient = require('mongodb').MongoClient;
 var mongo = require('./dbhelper');
 var serialport = require('serialport')
 var SerialPort = serialport.SerialPort
-var serialPort = new SerialPort("/dev/ttyACM0", {
+var serialPort = new SerialPort("/dev/ttyACM1", {
   baudrate: 57600,
   parser: serialport.parsers.readline("\n") 
 }, false);
-var serialPort2 = new SerialPort("/dev/ttyACM1", {
-  baudrate: 57600,
-  parser: serialport.parsers.readline("\n") 
-}, false);
+//var serialPort2 = new SerialPort("/dev/ttyACM1", {
+ // baudrate: 57600,
+ // parser: serialport.parsers.readline("\n") 
+//}, false);
 var ids_decode = {'1':"blue", '2':"green", '3':"pink", '4':"red", '5':"yellow"};
 var directions_decode = {'1':"N", '2':"NE", '3':"E", '4':"SE", '5':"S", '6':"SW", '7':"W", '8':"NW"};
 var ids_encode = {"blue":'1', "green":'2', "pink":'3', "red":'4', "yellow":'5'};
@@ -124,15 +124,8 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
       });
     }
 
-    serialPort2.open();
     serialPort.open(function () {
       serialPort.on('data', function(data) {
-        if(data.indexOf('PA') !== -1){
-          serialPort.write("T\n", function(err, results) {
-              console.log('err ' + err);
-              console.log('results ' + results);
-          });
-        }
         console.log(data);
       });
     
@@ -155,13 +148,17 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
         sendNextMove(message);
       }
 
-      var sendNextMove = function(message){
-        serialPort.write(message, function(err, results){
-          console.log('err ' + err);
-          console.log('results ' + results);
-        });
+      var sendNextMove = function(){//message){
+        // serialPort.write(message, function(err, results){
+        //   console.log('err ' + err);
+        //   console.log('results ' + results);
+        // });
+        console.log("Writing to serial...");
+        serialPort.write("1234");
       }
     
+      setInterval(sendNextMove, 5000);
+
     });
     
     

@@ -60,9 +60,7 @@ void setup(void)
 
   Serial.begin(57600);
   printf_begin();
-  printf("\n\rRF24/examples/GettingStarted/\n\r");
-  printf("ROLE: %s\n\r",role_friendly_name[role]);
-  printf("*** PRESS 'T' to begin transmitting to the other node\n\r");
+  printf("*** Begin\n\r");
 
   //
   // Setup and configure rf radio
@@ -89,14 +87,17 @@ void setup(void)
   //if ( role == role_ping_out )
   {
     //radio.openWritingPipe(pipes[0]);
-    radio.openReadingPipe(1,pipes[1]);
+    //radio.openReadingPipe(1,pipes[1]);
   }
   //else
   {
     //radio.openWritingPipe(pipes[1]);
     //radio.openReadingPipe(1,pipes[0]);
   }
-
+  
+  
+  radio.openWritingPipe(pipes[0]);
+  radio.openReadingPipe(1,pipes[1]);
   //
   // Start listening
   //
@@ -114,12 +115,10 @@ void setup(void)
 
 void loop(void)
 {
-  //
-  // Ping out role.  Repeatedly send the current time
-  //
-  String readString = "";
+  String readString = "";  
   if (Serial.available()){
     while (Serial.available()) {
+      //printf("hey ");
       delay(3);  //delay to allow buffer to fill 
       if (Serial.available() >0) {
         char c = Serial.read();  //gets one byte from serial buffer
@@ -127,45 +126,46 @@ void loop(void)
       } 
     }
     String message = readString;
-    String readString = "";
     char smessage[4];
-    message.toCharArray(smessage, 4);
+    message.toCharArray(smessage, sizeof(message));
+    int i = atoi(smessage);
     // First, stop listening so we can talk.
     radio.stopListening();
-
-    // Take the time, and send it.  This will block until complete
-    printf("Now sending %lu...",smessage);
-    bool ok = radio.write( &message, 16 );
+    unsigned long l = i;
+    Serial.print(l);
+    bool ok = radio.write( &l, sizeof(unsigned long) );
     
     if (ok)
-      printf("ok...");
+      printf(" ok...\n\r");
     else
-      printf("failed.\n\r");
-
+      printf(" failed.\n\r");
+      
+      
+    
     // Now, continue listening
     radio.startListening();
-
+  
     // Wait here until we get a response, or timeout (250ms)
     unsigned long started_waiting_at = millis();
     bool timeout = false;
-    while ( ! radio.available() && ! timeout )
-      if (millis() - started_waiting_at > 200 )
+    
+    while ( ! radio.available() && ! timeout ){
+      if (millis() - started_waiting_at > 300 )
         timeout = true;
-
+    }
+    Serial.print(timeout);
     // Describe the results
-    if ( timeout )
+    if ( timeout ) 
     {
       printf("Failed, response timed out.\n\r");
     }
     else
     {
       // Grab the response, compare, and send to debugging spew
-      String received_message;
-      radio.read( &received_message, 16 );
-      char rmessage[4];
-      received_message.toCharArray(rmessage, 4);
+      int received_message[4];
+      radio.read( &received_message, sizeof(received_message) );
       // Spew it
-      printf("Got response %lu.", rmessage);
+      printf("Got response %lu.\n\r", received_message);
     }
   }
 }
