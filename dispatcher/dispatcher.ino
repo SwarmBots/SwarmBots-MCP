@@ -79,7 +79,6 @@ void loop(void)
     message.toCharArray(smessage, sizeof(message));
     int i = atoi(smessage);
     long l = i;
-    Serial.println(i);
     Mirf.setTADDR((byte *)"clie1");
     //Serial.println(smessage); 
     Mirf.send((uint8_t*) &l);
@@ -88,7 +87,6 @@ void loop(void)
     unsigned long time = millis();
     while(!Mirf.dataReady()){
       if ( ( millis() - time ) > 300 ) {
-        Serial.println("Reciept timeout");
         return;
       }
     }
