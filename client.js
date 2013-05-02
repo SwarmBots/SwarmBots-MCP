@@ -83,7 +83,7 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
           if(queue.people.indexOf(json.sid) > -1){
             declineDuplicate(json.user.screen_name);
           }else{
-            sb.queue.push({name: json.name, photo: json.picture.data.url, location: json.location.name, sid:json.sid});
+            sb.queue.push({name: json.name, photo: json.picture.data.url, location: json.location.name, sid:json.sid, command: json.command});
             queue.people.push(json.sid);
             mongo.updateSwarmBot(db, sb, function (){
               mongo.updateQueue(db, queue, function (){
@@ -124,6 +124,13 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
       });
     }
 
+
+
+
+    var dispatchQueue = [];
+
+
+
     serialPort.open(function () {
       serialPort.on('data', function(data) {
         //parseMessage(data);
@@ -139,24 +146,49 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
 
       var getNextMove = function(data){
         if(isReady(data)){
-          packageNewMessage(json);
-        }else{
-
+          var bot = data[1];
+          mongo.getSwarmBot(db, bot, function (err, sb){
+            if (!sb.queue || sb.queue == []){
+              sb.queue = [{command: [Math.floor((Math.random()*100)+1), Math.floor((Math.random()*100)+1)]}];
+            }
+            mongo.getQueue(db, function (err, queue){
+              var command = sb.queue.shift();
+              packageNewMessage({client: '1', bot: ids_encode[bot.sid], x:command.command[0], y:command.command[1]});
+              if(command.sid){
+                queue.people.remove(command.sid);
+              }
+              mongo.updateSwarmBot(db, sb, function (){
+                mongo.updateQueue(db, queue, function (){
+                });
+              });
+            });
+          });
         }
       }
 
       var packageNewMessage = function(json){
-        var message = "";
+        var message = json.client + json.bot + json.x.toString() + json.y.toString();
         sendNextMove(message);
       }
 
-      var sendNextMove = function(){//message){
-        console.log("Writing to serial...");
-        // serialPort.write(message);
-        serialPort.write("1234");
+      var sendNextMove = function(message){
+        dispatchQueue.push(message);
       }
     
-      setInterval(sendNextMove, 5000);
+      var dispatch = function(){
+        if(dispatchQueue.length > 0){
+          console.log("Writing to serial...");
+          serialPort.write(dispatchQueue.shift());
+        }
+      }
+
+      var testMessage = function(){
+        console.log("Writing test message...");
+        serialPort.write("1234");
+      }
+
+      setInterval(testMessage, 5000);
+      setInterval(dispatch, 1000);
 
     });
     

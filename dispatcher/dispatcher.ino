@@ -58,7 +58,7 @@ void setup(){
   
   Mirf.config();
   
-  Serial.println("Listening..."); 
+  Serial.println("Transmitting..."); 
 }
 
 
@@ -84,18 +84,16 @@ void loop(void)
     //Serial.println(smessage); 
     Mirf.send((uint8_t*) &l);
 
-    unsigned long getget = 0;
-
+    unsigned long getget = 1234;
     unsigned long time = millis();
-    // Wait here until we get a response, or timeout (250ms)
     while(!Mirf.dataReady()){
-      //Serial.println("Waiting");
-      if ( ( millis() - time ) > 1000 ) {
+      if ( ( millis() - time ) > 300 ) {
+        Serial.println("Reciept timeout");
         return;
       }
     }
-    
     Mirf.getData((uint8_t*) &getget);
+    Serial.print("Got message ");
     Serial.println(getget);
 
   }

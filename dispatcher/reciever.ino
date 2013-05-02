@@ -49,7 +49,8 @@ void setup(){
    * Configure reciving address.
    */
    
-  Mirf.setRADDR((byte *)"clie1");
+  Mirf.setRADDR((byte *)"clie1");  
+  Mirf.setTADDR((byte *)"serv1");
   
   /*
    * Set the payload length to sizeof(unsigned long) the
@@ -78,31 +79,27 @@ void setup(){
   Mirf.channel = 2;
   Mirf.config();
   
-  Serial.println("Beginning ... "); 
+  Serial.println("Listening... "); 
 }
 
 
 
 void loop(){
-  
-  
-  
-  if(!Mirf.isSending() && Mirf.dataReady()){
-    unsigned long data = 0
-    ;
-    Serial.println("Got packet");
-
+  if(Mirf.dataReady()){
+    unsigned long data = 0;
+    Serial.print("Got packet ");
     Mirf.getData((uint8_t*) &data);
     Serial.println(data);
-    
-    Serial.print("\n");
-    unsigned long test = 256;
-    Mirf.setTADDR((byte *)"serv1");
+    unsigned long test = 5678;
     Mirf.send((uint8_t*) &test);
+    while(Mirf.isSending()){
+    }
+    Serial.print("Sent ");
+    Serial.println(test);
+    Serial.print('\n');
   }
-    
-  
 } 
+  
   
   
   
