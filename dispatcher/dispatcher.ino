@@ -77,12 +77,14 @@ void loop(void)
     String message = readString;
     char smessage[4];
     message.toCharArray(smessage, sizeof(message));
-
-
+    int i = atoi(smessage);
+    long l = i;
+    Serial.println(i);
     Mirf.setTADDR((byte *)"clie1");
-    Mirf.send((uint8_t*) smessage);
+    //Serial.println(smessage); 
+    Mirf.send((uint8_t*) &l);
 
-    uint8_t getget[4] = {'0','0','0','0'};
+    unsigned long getget = 0;
 
     unsigned long time = millis();
     // Wait here until we get a response, or timeout (250ms)
@@ -93,8 +95,8 @@ void loop(void)
       }
     }
     
-    Mirf.getData(getget);
-    Serial.println((char*) getget);
+    Mirf.getData((uint8_t*) &getget);
+    Serial.println(getget);
 
   }
 }

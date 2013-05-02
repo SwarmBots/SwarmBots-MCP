@@ -6,7 +6,7 @@ var mongo = require('./dbhelper');
 var serialport = require('serialport')
 var SerialPort = serialport.SerialPort
 var serialPort = new SerialPort("/dev/ttyACM0", {
-  baudrate: 57600,
+  baudrate: 9600,
   parser: serialport.parsers.readline("\n") 
 }, false);
 //var serialPort2 = new SerialPort("/dev/ttyACM1", {
@@ -126,7 +126,7 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
 
     serialPort.open(function () {
       serialPort.on('data', function(data) {
-        parseMessage(data);
+        //parseMessage(data);
         console.log(data);
       });
     
@@ -156,7 +156,7 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
         serialPort.write("1234");
       }
     
-      //setInterval(sendNextMove, 5000);
+      setInterval(sendNextMove, 5000);
 
     });
     
