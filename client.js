@@ -5,7 +5,7 @@ var MongoClient = require('mongodb').MongoClient;
 var mongo = require('./dbhelper');
 var serialport = require('serialport')
 var SerialPort = serialport.SerialPort
-var serialPort = new SerialPort("/dev/ttyACM1", {
+var serialPort = new SerialPort("/dev/ttyACM0", {
   baudrate: 57600,
   parser: serialport.parsers.readline("\n") 
 }, false);
@@ -108,7 +108,7 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
       });
     }
 
-    var declineCommand = function(screen_name){
+    var declineDuplicate = function(screen_name){
       user('statuses/update').post({
         status: "@" + screen_name + " sorry, you queue for one bot at a time."
       }, function (err, json){
@@ -126,21 +126,23 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
 
     serialPort.open(function () {
       serialPort.on('data', function(data) {
+        parseMessage(data);
         console.log(data);
       });
     
-      var parseMessage = function(message){
-        var data_array = [];
-        data_array[0] = message[0];
-        data_array[1] = ids_decode[message[1]];
-        data_array[2] = message[2];
-        data_array[3] = message[3];        
-        getNextMove(data_array);
+      var parseMessage = function(message){ 
+        if(message.indexOf('response:') > -1){
+          var resp = message.substring(message.length - 4, message.length)
+          getNextMove(resp.split(""));
+        }
       }
 
       var getNextMove = function(data){
-        
-        packageNewMessage(json);
+        if(isReady(data)){
+          packageNewMessage(json);
+        }else{
+
+        }
       }
 
       var packageNewMessage = function(json){
@@ -149,15 +151,12 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
       }
 
       var sendNextMove = function(){//message){
-        // serialPort.write(message, function(err, results){
-        //   console.log('err ' + err);
-        //   console.log('results ' + results);
-        // });
         console.log("Writing to serial...");
+        // serialPort.write(message);
         serialPort.write("1234");
       }
     
-      setInterval(sendNextMove, 5000);
+      //setInterval(sendNextMove, 5000);
 
     });
     
