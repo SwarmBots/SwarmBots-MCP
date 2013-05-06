@@ -5,7 +5,7 @@ var MongoClient = require('mongodb').MongoClient;
 var mongo = require('./dbhelper');
 var serialport = require('serialport')
 var SerialPort = serialport.SerialPort
-var serialPort = new SerialPort("/dev/ttyACM1", {
+var serialPort = new SerialPort("/dev/ttyACM0", {
   baudrate: 9600,
   parser: serialport.parsers.readline("\n") 
 }, false);
@@ -54,77 +54,84 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
 
     var checkValidCommand = function(text, user_info, screen_name){
       text = text.toLowerCase();
-      if (text.indexOf("blue") > -1){
-        submitCommand("blue", user_info)
-        acceptCommand(screen_name);
-      }else if (text.indexOf("green") > -1){
-        submitCommand("green", user_info)
-        acceptCommand(screen_name);
-      }else if (text.indexOf("red") > -1){
-        submitCommand("red", user_info)
-        acceptCommand(screen_name);
-      }else if (text.indexOf("pink") > -1){
-        submitCommand("pink", user_info)
-        acceptCommand(screen_name);
-      }else if (text.indexOf("yellow") > -1){
-        submitCommand("yellow", user_info)
-        acceptCommand(screen_name);
+      if (text.indexOf("@IntroduceMeTo") > -1){
+        sayHello(screen_name);
       }else{
-        declineCommand(screen_name);
+        if (text.indexOf("blue") > -1){
+          submitCommand("blue", user_info)
+          acceptCommand(screen_name);
+        }else if (text.indexOf("green") > -1){
+          submitCommand("green", user_info)
+          acceptCommand(screen_name);
+        }else if (text.indexOf("red") > -1){
+          submitCommand("red", user_info)
+          acceptCommand(screen_name);
+        }else if (text.indexOf("pink") > -1){
+          submitCommand("pink", user_info)
+          acceptCommand(screen_name);
+        }else if (text.indexOf("yellow") > -1){
+          submitCommand("yellow", user_info)
+          acceptCommand(screen_name);
+        }else{
+          submitCommand("blue", user_info)
+          acceptCommand(screen_name);
+        }
       }
     }
 
     var submitCommand = function(bot, json){
       mongo.getSwarmBot(db, bot, function (err, sb){
-        if (!sb.queue){
+        /*if (!sb.queue){
           sb.queue = [];
-        }
+        }*/
         mongo.getQueue(db, function (err, queue){
           if(queue.people.indexOf(json.sid) > -1){
             declineDuplicate(json.user.screen_name);
           }else{
-            sb.queue.push({name: json.name, photo: json.picture.data.url, location: json.location.name, sid:json.sid, command: json.command});
+            queue.meta.push({name: json.name, photo: json.picture.data.url, location: json.location.name, sid:json.sid});
             queue.people.push(json.sid);
-            mongo.updateSwarmBot(db, sb, function (){
-              mongo.updateQueue(db, queue, function (){
-              });
+            //mongo.updateSwarmBot(db, sb, function (){
+            mongo.updateQueue(db, queue, function (){
             });
+            //});
           }
         });
       });
     } 
 
-
+    var tweetQueue =[];
 
     var acceptCommand = function(screen_name){
       sendReceipt(screen_name);
     }
 
-    var sendReceipt= function(screen_name){
-      user('statuses/update').post({
-        status: "@" + screen_name + " your command has been added to the queue. Thank you!"
-      }, function (err, json){
-        console.log("Confirmation sent.");
-      });
+    var sendReceipt = function(screen_name){
+      tweetQueue.push("@" + screen_name + " you have successfully moved our bots! Thanks!");
+    }
+
+    var sayHello = function(screen_name){
+      tweetQueue.push("@" + screen_name + " no need to go through them. Hi!");
     }
 
     var declineDuplicate = function(screen_name){
-      user('statuses/update').post({
-        status: "@" + screen_name + " sorry, you queue for one bot at a time."
-      }, function (err, json){
-        console.log("Command Declined, duplicate.");
-      });
+      tweetQueue.push("@" + screen_name + " sorry, you can only be in the queue once. Try again once your turn is up!");
     }
 
     var declineCommand = function(screen_name){
-      user('statuses/update').post({
-        status: "@" + screen_name + " that is an invalid command."
-      }, function (err, json){
-        console.log("Command Declined, invalid.");
-      });
+      tweetQueue.push("@" + screen_name + " that is an invalid command.");
     }
 
+    var tweet = function(){
+      if (tweetQueue.length > 0){
+        user('statuses/update').post({
+          status: tweetQueue.shift()
+        }, function (err, json){
+          console.log("Tweet sent.");
+        });
+      }
+    }
 
+    setInterval(tweet, 60000);
 
 
     var dispatchQueue = [];
@@ -145,25 +152,15 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
       }
 
       var getNextMove = function(data){
-        if(isReady(data)){
-          var bot = data[1];
-          mongo.getSwarmBot(db, bot, function (err, sb){
-            if (!sb.queue || sb.queue == []){
-              sb.queue = [{command: [Math.floor((Math.random()*100)+1), Math.floor((Math.random()*100)+1)]}];
-            }
-            mongo.getQueue(db, function (err, queue){
-              var command = sb.queue.shift();
-              packageNewMessage({client: '1', bot: ids_encode[bot.sid], x:command.command[0], y:command.command[1]});
-              if(command.sid){
-                queue.people.remove(command.sid);
-              }
-              mongo.updateSwarmBot(db, sb, function (){
-                mongo.updateQueue(db, queue, function (){
-                });
-              });
-            });
+        mongo.getQueue(db, function (err, queue){
+          if (queue.people.length > 1){
+            dispatchQueue.push(queue.people.shift());
+            console.log(dispatchQueue);
+          }
+          mongo.updateQueue(db, queue, function (){
+            dispatch();
           });
-        }
+        });
       }
 
       var packageNewMessage = function(json){
@@ -178,7 +175,8 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
       var dispatch = function(){
         if(dispatchQueue.length > 0){
           console.log("Writing to serial...");
-          serialPort.write(dispatchQueue.shift());
+          dispatchQueue.shift()
+          serialPort.write("1234");
         }
       }
 
@@ -187,8 +185,8 @@ MongoClient.connect(process.env.SWARMBOTS_MONGO_URI, function (err, db){
         serialPort.write("1234");
       }
 
-      setInterval(testMessage, 5000);
-      setInterval(dispatch, 1000);
+      //setInterval(testMessage, 5000);
+      setInterval(getNextMove, 1000);
 
     });
     
